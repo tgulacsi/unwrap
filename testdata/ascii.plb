@@ -1,0 +1,30 @@
+CREATE OR REPLACE
+PROCEDURE x_ascii wrapped 
+a000000
+20
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+abcd
+7
+12b 1be
+8ugTJTg5PXqsfhjnNJnqP/xd1C8wg/vV+3f5aQmuhOmiXAnpyjAPOMcL3t7KoV6e5umAodye
+yspUynsAykmm++EdNkQ5W+e9npl0sssoL/PTto6Ubx8EiKv9dqQcLMqoZu8UbBtJSRY+xdVW
+YtGWfH9lgiEq33hXrXvaegAiJGc15oSi6WCAWqHyDFku3K5pzAlew1wr6lSTo7pxTIcPcDjg
+C5EByRcR3if2fnlIILhSwMf1Mp+/MEIjEs8QP6qpN6zWRgJAB+P0GG1f8ErQyPfxt4mNp5x1
+WOwTbpBBTw5rUYwaY+iwTSblCtg74mRLLcIDoA1hxFO+RZg07byd3a8VatuV1MaF+pfZR9f/
+clCzJet3PTyxtDGDBWhVGZqP7gaGXUOLwX0p/B6Kzbm7pQibTtKBM/7OOpL45HP5Sdqe6dyi
+2qawxvQS
+
+/
