@@ -14,6 +14,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// See http://marcel.vandewaters.nl/oracle/security/unwrapping-wrapped-plsql-in-10g-and-11g
+
+//go:generate sh -c "go run ./testdata/ascii.go >testdata/ascii.sql"
+//go:generate sh -c "ulimit -d unlimited; wrap edebug=wrap_new_sql iname=testdata/ascii oname=testdata/ascii"
+//go:generate sh -c "go run ./unwrap.go -no-decode <testdata/ascii.plb >testdata/ascii.uw"
+//go:generate sh -c "go run ./testdata/mktable.go <testdata/ascii.uw >tbl.go"
+
 func main() {
 	if err := Main(); err != nil {
 		fmt.Fprintf(os.Stderr, "%+v", err)
@@ -22,12 +29,13 @@ func main() {
 
 func Main() error {
 	flagVerbose := flag.Bool("v", false, "verbose logging")
+	flagNoDecode := flag.Bool("no-decode", false, "no decode (for table building)")
 	flag.Parse()
 	logger := log.NewNopLogger()
 	if *flagVerbose {
 		logger = log.NewLogfmtLogger(os.Stderr)
 	}
-	U := NewUnwraper(os.Stdin, logger)
+	U := NewUnwraper(os.Stdin, WithLogger(logger), WithNoDecode(*flagNoDecode))
 	for {
 		_, err := U.Unwrap(os.Stdout)
 		if err != nil {
@@ -54,13 +62,33 @@ const (
 // Unwrap a PL/SQL wrapped procedure,
 // from
 // http://marcel.vandewaters.nl/oracle/security/unwrapping-wrapped-plsql-in-10g-and-11g
-func NewUnwraper(r io.Reader, logger log.Logger) unwrapper {
-	return unwrapper{r: bufio.NewReader(r), Logger: logger}
+func NewUnwraper(r io.Reader, options ...option) unwrapper {
+	U := unwrapper{r: bufio.NewReader(r)}
+	for _, o := range options {
+		o(&U)
+	}
+	return U
 }
+
+func WithLogger(logger log.Logger) option {
+	return func(U *unwrapper) {
+		U.Logger = logger
+	}
+}
+func WithNoDecode(nodecode bool) option {
+	return func(U *unwrapper) {
+		U.noDecode = nodecode
+	}
+}
+
+var charMap [256]byte
+
+type option func(*unwrapper)
 
 type unwrapper struct {
 	r *bufio.Reader
 	log.Logger
+	noDecode bool
 }
 
 func (U unwrapper) Unwrap(w io.Writer) (Type, error) {
@@ -128,6 +156,30 @@ func (U unwrapper) Unwrap(w io.Writer) (Type, error) {
 	// As mentioned before, the wrapped PL/SQL text is BASE64 coded and needs to be decoded before you can actually start unwrapping (decrypting).
 	// The remaining of the body is a coded (using a codetable) compressed stream of bytes that contains the source text.
 
-	_, err := io.Copy(w, b64r)
+	var err error
+	if U.noDecode {
+		_, err = io.Copy(w, b64r)
+		return typ, err
+	}
+
+	b := make([]byte, 4096)
+	for {
+		var n int
+		n, err = b64r.Read(b[:])
+		b = b[:n]
+		for i, c := range b {
+			b[i] = charMap[c]
+		}
+		if _, wErr := w.Write(b); wErr != nil && err == nil {
+			return typ, wErr
+		}
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			break
+		}
+	}
+
 	return typ, err
 }

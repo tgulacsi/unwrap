@@ -7,7 +7,7 @@ func main() {
 	fmt.Print(`CREATE OR REPLACE
 PROCEDURE x_ascii IS
 BEGIN
-  x := '`)
+  x := '----------`)
 	for i := byte(0); i < 255; i++ {
 		os.Stdout.Write([]byte{i})
 		if i == '\'' {
